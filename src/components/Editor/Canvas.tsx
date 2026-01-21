@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import type { GameProject, GameObject } from '../../types';
 import { useEditor, EDITOR_ACTIONS } from '../../context/EditorContext';
+import PhaserRuntime from './PhaserRuntime';
 
 interface CanvasProps {
   project: GameProject | null;
@@ -457,6 +458,20 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [currentProject, selectedObjectId, state.selectedObjects, state.currentProject, state.panOffset]);
 
+  // Handle stop game
+  const handleStopGame = () => {
+    dispatch({
+      type: EDITOR_ACTIONS.SET_PLAYING,
+      payload: false,
+      timestamp: new Date()
+    });
+  };
+
+  // Show Phaser runtime when playing
+  if (state.isPlaying && currentProject) {
+    return <PhaserRuntime project={currentProject} onStop={handleStopGame} />;
+  }
+
   return (
     <div style={{
       width: '100%',
@@ -477,55 +492,12 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
           width: '100%',
           height: '100%',
           display: 'block',
-          cursor: state.isPlaying 
-            ? 'default' 
-            : state.editorMode === 'pan' 
-              ? (isPanning ? 'grabbing' : 'grab')
-              : (isDraggingObject ? 'grabbing' : 'move'),
+          cursor: state.editorMode === 'pan' 
+            ? (isPanning ? 'grabbing' : 'grab')
+            : (isDraggingObject ? 'grabbing' : 'move'),
           background: '#34495e'
         }}
       />
-      
-      {/* Play mode overlay */}
-      {state.isPlaying && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(0, 0, 0, 0.85)',
-          padding: '32px 48px',
-          borderRadius: '12px',
-          color: '#ecf0f1',
-          textAlign: 'center',
-          maxWidth: '500px',
-          border: '2px solid #3498db',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎮</div>
-          <h2 style={{ margin: '0 0 16px 0', color: '#3498db' }}>Play Mode</h2>
-          <p style={{ margin: '0 0 12px 0', fontSize: '14px', lineHeight: '1.6' }}>
-            The behaviors you added are stored but not yet implemented.
-          </p>
-          <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#95a5a6', lineHeight: '1.5' }}>
-            To make the game actually playable, you need to integrate a physics engine like Phaser.js 
-            that will read the behavior data and execute it.
-          </p>
-          <div style={{ 
-            background: 'rgba(52, 152, 219, 0.1)', 
-            padding: '12px', 
-            borderRadius: '6px',
-            fontSize: '12px',
-            color: '#bdc3c7',
-            marginTop: '16px'
-          }}>
-            <strong>What's working:</strong><br/>
-            ✅ Behavior configuration<br/>
-            ✅ Data storage<br/>
-            ❌ Game runtime (not implemented yet)
-          </div>
-        </div>
-      )}
       
       {/* Status overlay */}
       <div style={{
@@ -541,13 +513,9 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
         pointerEvents: 'none',
         whiteSpace: 'nowrap'
       }}>
-        {!state.isPlaying ? (
-          state.editorMode === 'move' 
-            ? '✋ Move Mode: Click and drag objects'
-            : '🖐️ Pan Mode: Click and drag to navigate'
-        ) : (
-          '🎮 Playing - Click Stop to return to editor'
-        )}
+        {state.editorMode === 'move' 
+          ? '✋ Move Mode: Click and drag objects'
+          : '🖐️ Pan Mode: Click and drag to navigate'}
       </div>
     </div>
   );
