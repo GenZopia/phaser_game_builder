@@ -198,6 +198,37 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
       </div>
 
       <div className="properties-content">
+        {/* Sprite Properties */}
+        <div className="property-section">
+          <h4>Sprite</h4>
+          
+          <div className="property-group">
+            <label>Name</label>
+            <input
+              type="text"
+              value={selectedObject!.properties?.name || ''}
+              onChange={(e) => {
+                handlePropertyChange('properties', {
+                  ...selectedObject!.properties,
+                  name: e.target.value
+                });
+              }}
+              placeholder={`Unnamed ${selectedObject!.type}`}
+              style={{
+                width: '100%',
+                padding: '6px',
+                background: '#34495e',
+                color: '#ecf0f1',
+                border: '1px solid #4a5f7a',
+                borderRadius: '4px'
+              }}
+            />
+            <div style={{ fontSize: '10px', color: '#95a5a6', marginTop: '4px' }}>
+              Custom name for this object
+            </div>
+          </div>
+        </div>
+
         {/* Transform Properties */}
         <div className="property-section">
           <h4>Transform</h4>
@@ -283,6 +314,39 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
               max="360"
             />
             <span className="unit">degrees</span>
+          </div>
+
+          {/* Visibility Options */}
+          <div className="property-group">
+            <label>Visibility</label>
+            <select
+              value={selectedObject!.properties?.visibility || 'visible'}
+              onChange={(e) => {
+                handlePropertyChange('properties', {
+                  ...selectedObject!.properties,
+                  visibility: e.target.value
+                });
+              }}
+              style={{
+                width: '100%',
+                padding: '6px',
+                background: '#34495e',
+                color: '#ecf0f1',
+                border: '1px solid #4a5f7a',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="visible">Visible</option>
+              <option value="hiddenInPlay">Hidden in Play Mode</option>
+              <option value="alwaysHidden">Always Hidden</option>
+            </select>
+            <div style={{ fontSize: '10px', color: '#95a5a6', marginTop: '4px' }}>
+              {selectedObject!.properties?.visibility === 'visible' && '👁️ Visible everywhere'}
+              {selectedObject!.properties?.visibility === 'hiddenInPlay' && '🎮 Hidden during play, visible in editor'}
+              {selectedObject!.properties?.visibility === 'alwaysHidden' && '🚫 Always invisible'}
+              {!selectedObject!.properties?.visibility && '👁️ Visible everywhere'}
+            </div>
           </div>
 
           {/* Gravity Strength - Only for gravity objects */}

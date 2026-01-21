@@ -389,6 +389,14 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
     if (currentProject && currentProject.scenes.length > 0) {
       const scene = currentProject.scenes[0];
       scene.objects.forEach(obj => {
+        // Check visibility setting
+        const visibility = obj.properties?.visibility || 'visible';
+        
+        // Skip drawing if always hidden
+        if (visibility === 'alwaysHidden') {
+          return;
+        }
+        
         const isSelected = selectedObjectId === obj.id || state.selectedObjects.some(selected => selected.id === obj.id);
         
         // Controller objects are fixed to screen, others move with camera

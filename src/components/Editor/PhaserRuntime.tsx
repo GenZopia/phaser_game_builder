@@ -140,11 +140,23 @@ const PhaserRuntime: React.FC<PhaserRuntimeProps> = ({
           return;
         }
 
+        // Check visibility - skip completely if always hidden
+        const visibility = obj.properties?.visibility || 'visible';
+        if (visibility === 'alwaysHidden') {
+          // Don't create the object at all - no physics, no behaviors, nothing
+          return;
+        }
+
         // Create sprite
         const sprite = this.physics.add.sprite(obj.position.x, obj.position.y, texture);
         sprite.setScale(obj.scale.x, obj.scale.y);
         sprite.setData('objectId', obj.id);
         sprite.setData('objectData', obj);
+        
+        // Handle "Hidden in Play Mode" - invisible but all behaviors work
+        if (visibility === 'hiddenInPlay') {
+          sprite.setVisible(false); // Hide visually but keep physics active
+        }
         
         // Boundaries are invisible walls in play mode
         if (obj.type === 'boundary') {
@@ -162,7 +174,7 @@ const PhaserRuntime: React.FC<PhaserRuntimeProps> = ({
           const gravityStrength = obj.properties?.gravityStrength || 500;
           const isRepulsion = gravityStrength < 0;
           
-          // Create text to show gravity strength
+          // Create text to show gravity strength (hide if object is hidden in play)
           const text = this.add.text(sprite.x, sprite.y, Math.abs(gravityStrength).toString(), {
             fontSize: '20px',
             fontStyle: 'bold',
@@ -172,6 +184,10 @@ const PhaserRuntime: React.FC<PhaserRuntimeProps> = ({
           });
           text.setOrigin(0.5);
           text.setDepth(1000);
+          
+          if (visibility === 'hiddenInPlay') {
+            text.setVisible(false); // Hide text too
+          }
           
           // Store gravity zone with text for later processing
           this.gravityZones.push({ sprite, data: obj, text });
@@ -442,6 +458,12 @@ const PhaserRuntime: React.FC<PhaserRuntimeProps> = ({
             ? (gravityBehavior.parameters.maxDistance || 800)
             : 800; // Default max distance
           
+          // Get gravity zone's mass (m1) - default to 1 if no physics behavior
+          const gravityPhysicsBehavior = gravityData.behaviors?.find(b => b.type === 'physics');
+          const m1 = gravityPhysicsBehavior?.parameters?.enabled 
+            ? (gravityPhysicsBehavior.parameters.mass || 1)
+            : 1; // Default mass for gravity zone
+          
           // Apply magnetic pull to objects with physics enabled
           this.objectSprites.forEach((sprite) => {
             // Skip gravity zones, boundaries, controllers, and fixed/stuck objects
@@ -472,6 +494,9 @@ const PhaserRuntime: React.FC<PhaserRuntimeProps> = ({
             const body = sprite.body as Phaser.Physics.Arcade.Body;
             if (!body || !body.enable) return;
             
+            // Get object's mass (m2)
+            const m2 = physicsBehavior.parameters.mass || 1;
+            
             // Calculate distance from object to gravity center
             const dx = gravityCenterX - sprite.x;
             const dy = gravityCenterY - sprite.y;
@@ -479,14 +504,25 @@ const PhaserRuntime: React.FC<PhaserRuntimeProps> = ({
             
             // Only apply gravity if within max distance
             if (distance > 0 && distance < maxPullDistance) {
-              // Calculate pull strength (stronger when closer, using inverse square law)
-              const pullStrength = finalGravityStrength / (distance * distance) * 10000;
+              // Newton's Law of Universal Gravitation: F = G * m1 * m2 / r²
+              // G is the gravitational constant (using finalGravityStrength as G)
+              // m1 is the gravity zone's mass
+              // m2 is the object's mass
+              // r is the distance between them
+              
+              const G = finalGravityStrength; // Gravitational constant (can be positive or negative)
+              const r_squared = distance * distance;
+              
+              // Calculate gravitational force: F = G * m1 * m2 / r²
+              // Add scaling factor to make the effect visible in game
+              const scalingFactor = 10000; // Adjust this to tune gravity strength
+              const force = (G * m1 * m2 * scalingFactor) / r_squared;
               
               // Normalize direction and apply force
-              const forceX = (dx / distance) * pullStrength;
-              const forceY = (dy / distance) * pullStrength;
+              const forceX = (dx / distance) * force;
+              const forceY = (dy / distance) * force;
               
-              // Apply the magnetic pull (or repulsion if negative)
+              // Apply the gravitational force (or repulsion if G is negative)
               body.setAccelerationX(forceX);
               body.setAccelerationY(forceY);
             } else if (distance >= maxPullDistance) {
