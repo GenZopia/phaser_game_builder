@@ -447,16 +447,32 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
   };
 
   useEffect(() => {
-    drawCanvas();
+    // Only draw when not playing
+    if (!state.isPlaying) {
+      drawCanvas();
+    }
     
     // Redraw on window resize
     const handleResize = () => {
-      drawCanvas();
+      if (!state.isPlaying) {
+        drawCanvas();
+      }
     };
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [currentProject, selectedObjectId, state.selectedObjects, state.currentProject, state.panOffset]);
+  }, [currentProject, selectedObjectId, state.selectedObjects, state.currentProject, state.panOffset, state.isPlaying]);
+
+  // Force redraw when returning from play mode
+  useEffect(() => {
+    if (!state.isPlaying) {
+      // Small delay to ensure canvas is ready
+      const timer = setTimeout(() => {
+        drawCanvas();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [state.isPlaying]);
 
   // Handle stop game
   const handleStopGame = () => {
@@ -473,13 +489,16 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
   }
 
   return (
-    <div style={{
-      width: '100%',
-      height: '100%',
-      background: '#34495e',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
+    <div 
+      key={`canvas-${state.isPlaying ? 'playing' : 'editor'}`}
+      style={{
+        width: '100%',
+        height: '100%',
+        background: '#34495e',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
       <canvas
         ref={canvasRef}
         onDragOver={handleDragOver}

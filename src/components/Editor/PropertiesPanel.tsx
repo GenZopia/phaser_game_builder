@@ -563,6 +563,62 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
                         </div>
                       </div>
                     )}
+
+                    {/* Oblique Behavior Parameters */}
+                    {behavior.type === 'oblique' && (
+                      <div className="behavior-parameters">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={behavior.parameters.enabled}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'enabled', e.target.checked)}
+                          />
+                          Enabled
+                        </label>
+
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={behavior.parameters.onlyCollideWithOblique}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'onlyCollideWithOblique', e.target.checked)}
+                          />
+                          Only Collide With Oblique Objects
+                        </label>
+
+                        <div className="param-row">
+                          <label>Collision Group</label>
+                          <input
+                            type="text"
+                            value={behavior.parameters.collisionGroup}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'collisionGroup', e.target.value)}
+                            placeholder="default"
+                          />
+                        </div>
+
+                        <div className="param-row">
+                          <label>Padding (px)</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.padding}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'padding', parseFloat(e.target.value) || 0)}
+                            step="5"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+
+                        <div style={{
+                          background: 'rgba(52, 152, 219, 0.1)',
+                          padding: '8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          color: '#95a5a6',
+                          marginTop: '8px'
+                        }}>
+                          💡 Objects with Oblique will pass through normal objects unless they also have Oblique behavior
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -133,6 +133,27 @@ const PhaserRuntime: React.FC<PhaserRuntimeProps> = ({ project, onStop }) => {
           body.setFriction(physicsBehavior.parameters.friction, physicsBehavior.parameters.friction);
         }
 
+        // Apply Oblique behavior (collision rules)
+        const obliqueBehavior = obj.behaviors.find(b => b.type === 'oblique');
+        if (obliqueBehavior && obliqueBehavior.parameters.enabled) {
+          const body = sprite.body as Phaser.Physics.Arcade.Body;
+          
+          // Apply padding by adjusting body size
+          if (obliqueBehavior.parameters.padding > 0) {
+            const padding = obliqueBehavior.parameters.padding;
+            body.setSize(
+              sprite.width - padding * 2,
+              sprite.height - padding * 2
+            );
+            body.setOffset(padding, padding);
+          }
+          
+          // Store oblique data for collision filtering
+          sprite.setData('hasOblique', true);
+          sprite.setData('obliqueGroup', obliqueBehavior.parameters.collisionGroup);
+          sprite.setData('onlyCollideWithOblique', obliqueBehavior.parameters.onlyCollideWithOblique);
+        }
+
         // Setup Controls behavior
         const controlsBehavior = obj.behaviors.find(b => b.type === 'controls');
         if (controlsBehavior && controlsBehavior.parameters.enabled) {
@@ -151,7 +172,39 @@ const PhaserRuntime: React.FC<PhaserRuntimeProps> = ({ project, onStop }) => {
         
         sprites.forEach((sprite1, i) => {
           sprites.slice(i + 1).forEach(sprite2 => {
-            this.physics.add.collider(sprite1, sprite2);
+            // Check if either sprite has oblique behavior
+            const sprite1HasOblique = sprite1.getData('hasOblique');
+            const sprite2HasOblique = sprite2.getData('hasOblique');
+            
+            // Determine if collision should happen
+            let shouldCollide = true;
+            
+            if (sprite1HasOblique || sprite2HasOblique) {
+              // If either has oblique and onlyCollideWithOblique is true
+              const sprite1OnlyOblique = sprite1.getData('onlyCollideWithOblique');
+              const sprite2OnlyOblique = sprite2.getData('onlyCollideWithOblique');
+              
+              if (sprite1OnlyOblique && !sprite2HasOblique) {
+                shouldCollide = false; // sprite1 only collides with oblique, sprite2 doesn't have it
+              }
+              if (sprite2OnlyOblique && !sprite1HasOblique) {
+                shouldCollide = false; // sprite2 only collides with oblique, sprite1 doesn't have it
+              }
+              
+              // Both have oblique - check collision groups
+              if (sprite1HasOblique && sprite2HasOblique && shouldCollide) {
+                const group1 = sprite1.getData('obliqueGroup');
+                const group2 = sprite2.getData('obliqueGroup');
+                // Same group = collide, different group = pass through
+                if (group1 !== group2) {
+                  shouldCollide = false;
+                }
+              }
+            }
+            
+            if (shouldCollide) {
+              this.physics.add.collider(sprite1, sprite2);
+            }
           });
         });
       }

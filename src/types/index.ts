@@ -66,7 +66,7 @@ export interface CameraConfig {
 
 export interface GameBehavior {
   id: string;
-  type: 'physics' | 'controls' | 'camera' | string;
+  type: 'physics' | 'controls' | 'camera' | 'oblique' | string;
   name: string;
   parameters: Record<string, any>;
 }
@@ -112,6 +112,16 @@ export interface CameraBehavior extends GameBehavior {
       width: number;
       height: number;
     };
+  };
+}
+
+export interface ObliqueBehavior extends GameBehavior {
+  type: 'oblique';
+  parameters: {
+    enabled: boolean;
+    collisionGroup: string;
+    padding: number;
+    onlyCollideWithOblique: boolean;
   };
 }
 

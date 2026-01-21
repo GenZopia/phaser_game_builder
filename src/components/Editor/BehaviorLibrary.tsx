@@ -4,7 +4,7 @@ import './BehaviorLibrary.css';
 interface BehaviorItem {
   id: string;
   name: string;
-  type: 'physics' | 'controls' | 'camera';
+  type: 'physics' | 'controls' | 'camera' | 'oblique';
   icon: string;
   description: string;
   defaultParameters: Record<string, any>;
@@ -62,6 +62,19 @@ const behaviors: BehaviorItem[] = [
         width: 100,
         height: 100,
       },
+    },
+  },
+  {
+    id: 'oblique',
+    name: 'Oblique Collision',
+    type: 'oblique',
+    icon: '🔷',
+    description: 'Control collision rules - only collide with other oblique objects',
+    defaultParameters: {
+      enabled: true,
+      collisionGroup: 'default',
+      padding: 0,
+      onlyCollideWithOblique: true,
     },
   },
 ];
