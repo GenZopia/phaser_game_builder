@@ -90,15 +90,29 @@ const Toolbar: React.FC = () => {
   };
 
   const handleZoomIn = () => {
-    gameEditor.setZoom(state.zoom * 1.2);
+    const newZoom = Math.min(state.zoom * 1.2, 5); // Max zoom 5x
+    dispatch({
+      type: EDITOR_ACTIONS.SET_ZOOM,
+      payload: newZoom,
+      timestamp: new Date()
+    });
   };
 
   const handleZoomOut = () => {
-    gameEditor.setZoom(state.zoom / 1.2);
+    const newZoom = Math.max(state.zoom / 1.2, 0.1); // Min zoom 0.1x
+    dispatch({
+      type: EDITOR_ACTIONS.SET_ZOOM,
+      payload: newZoom,
+      timestamp: new Date()
+    });
   };
 
   const handleZoomReset = () => {
-    gameEditor.resetView();
+    dispatch({
+      type: EDITOR_ACTIONS.SET_ZOOM,
+      payload: 1,
+      timestamp: new Date()
+    });
   };
 
   const handleSetMoveMode = () => {

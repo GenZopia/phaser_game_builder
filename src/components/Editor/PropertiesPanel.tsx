@@ -27,6 +27,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
   const [scaleX, setScaleX] = useState(selectedObject?.scale.x || 1);
   const [scaleY, setScaleY] = useState(selectedObject?.scale.y || 1);
   const [rotation, setRotation] = useState(selectedObject?.rotation || 0);
+  const [gravityStrength, setGravityStrength] = useState(selectedObject?.properties?.gravityStrength || 500);
 
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
@@ -37,6 +38,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
       setScaleX(selectedObject.scale.x);
       setScaleY(selectedObject.scale.y);
       setRotation(selectedObject.rotation);
+      setGravityStrength(selectedObject.properties?.gravityStrength || 500);
     }
   }, [selectedObject?.id, objectToUse?.behaviors?.length]);
 
@@ -282,6 +284,29 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
             />
             <span className="unit">degrees</span>
           </div>
+
+          {/* Gravity Strength - Only for gravity objects */}
+          {selectedObject!.type === 'gravity' && (
+            <div className="property-group">
+              <label>Gravity</label>
+              <input
+                type="number"
+                value={gravityStrength}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value) || 0;
+                  setGravityStrength(val);
+                  handlePropertyChange('properties', {
+                    ...selectedObject!.properties,
+                    gravityStrength: val
+                  });
+                }}
+                step="50"
+              />
+              <span className="unit" style={{ fontSize: '11px', color: '#95a5a6' }}>
+                {gravityStrength >= 0 ? 'attract' : 'repel'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Behaviors Section */}
@@ -358,15 +383,6 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
                             onChange={(e) => handleBehaviorParameterChange(behavior.id, 'enabled', e.target.checked)}
                           />
                           Enabled
-                        </label>
-                        
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={behavior.parameters.isStatic}
-                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'isStatic', e.target.checked)}
-                          />
-                          Static Body
                         </label>
 
                         <div className="param-row">
@@ -468,6 +484,15 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
                             onChange={(e) => handleBehaviorParameterChange(behavior.id, 'canDoubleJump', e.target.checked)}
                           />
                           Double Jump
+                        </label>
+
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={behavior.parameters.allowVerticalMovement || false}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'allowVerticalMovement', e.target.checked)}
+                          />
+                          Allow Vertical Movement (Top-Down)
                         </label>
 
                         <div className="keys-section">
@@ -579,6 +604,15 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
                         <label className="checkbox-label">
                           <input
                             type="checkbox"
+                            checked={behavior.parameters.isStatic || false}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'isStatic', e.target.checked)}
+                          />
+                          Static Body (Immovable)
+                        </label>
+
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
                             checked={behavior.parameters.onlyCollideWithOblique}
                             onChange={(e) => handleBehaviorParameterChange(behavior.id, 'onlyCollideWithOblique', e.target.checked)}
                           />
@@ -616,6 +650,101 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
                           marginTop: '8px'
                         }}>
                           💡 Objects with Oblique will pass through normal objects unless they also have Oblique behavior
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Fixed Position Behavior Parameters */}
+                    {behavior.type === 'fixed' && (
+                      <div className="behavior-parameters">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={behavior.parameters.enabled}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'enabled', e.target.checked)}
+                          />
+                          Enabled
+                        </label>
+
+                        <div className="param-row">
+                          <label>Screen X</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.screenX}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'screenX', parseFloat(e.target.value) || 0)}
+                            step="10"
+                            min="0"
+                          />
+                        </div>
+
+                        <div className="param-row">
+                          <label>Screen Y</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.screenY}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'screenY', parseFloat(e.target.value) || 0)}
+                            step="10"
+                            min="0"
+                          />
+                        </div>
+
+                        <div style={{
+                          background: 'rgba(155, 89, 182, 0.1)',
+                          padding: '8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          color: '#95a5a6',
+                          marginTop: '8px'
+                        }}>
+                          📌 Object will stay pinned to this screen position regardless of camera movement
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gravity Force Behavior Parameters */}
+                    {behavior.type === 'gravity' && (
+                      <div className="behavior-parameters">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={behavior.parameters.enabled}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'enabled', e.target.checked)}
+                          />
+                          Enabled
+                        </label>
+
+                        <div className="param-row">
+                          <label>Gravity Strength</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.strength}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'strength', parseFloat(e.target.value) || 0)}
+                            step="50"
+                          />
+                        </div>
+
+                        <div className="param-row">
+                          <label>Max Distance</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.maxDistance}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'maxDistance', parseFloat(e.target.value) || 100)}
+                            step="50"
+                            min="100"
+                          />
+                        </div>
+
+                        <div style={{
+                          background: 'rgba(155, 89, 182, 0.1)',
+                          padding: '8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          color: '#95a5a6',
+                          marginTop: '8px'
+                        }}>
+                          🧲 <strong>Positive values</strong> attract objects (pull in)<br/>
+                          🚫 <strong>Negative values</strong> repel objects (push away)<br/>
+                          💡 Default: 500 (attraction), -500 (repulsion)
                         </div>
                       </div>
                     )}

@@ -25,6 +25,15 @@
   background: #2c3e50;
   border-right: 1px solid #34495e;
   overflow-y: auto;
+  transition: width 0.3s ease;
+  display: block;
+}
+
+.component-library-sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: none;
 }
 
 .canvas-area {
@@ -34,6 +43,7 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  position: relative;
 }
 
 .properties-sidebar {
@@ -42,6 +52,79 @@
   background: #2c3e50;
   border-left: 1px solid #34495e;
   overflow-y: auto;
+  transition: width 0.3s ease;
+  display: block;
+}
+
+.properties-sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: none;
+}
+
+/* Sidebar toggle buttons */
+.sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10000;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: 2px solid #2c3e50;
+  color: white;
+  width: 40px;
+  height: 90px;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  pointer-events: auto !important;
+  user-select: none;
+}
+
+.sidebar-toggle:hover {
+  background: linear-gradient(135deg, #2980b9, #21618c);
+  width: 45px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.sidebar-toggle:active {
+  background: linear-gradient(135deg, #21618c, #1a4d6d);
+  transform: translateY(-50%) scale(0.95);
+}
+
+.sidebar-toggle.left-toggle {
+  left: 10px;
+  border-radius: 0 12px 12px 0;
+}
+
+.component-library-sidebar.collapsed ~ .canvas-area .sidebar-toggle.left-toggle {
+  left: 10px;
+  animation: pulse 2s infinite;
+}
+
+.sidebar-toggle.right-toggle {
+  right: 10px;
+  border-radius: 12px 0 0 12px;
+}
+
+.properties-sidebar.collapsed ~ * .sidebar-toggle.right-toggle {
+  right: 10px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 16px rgba(52, 152, 219, 0.5);
+  }
+  50% {
+    box-shadow: 0 4px 24px rgba(52, 152, 219, 0.8);
+  }
 }
 
 .ai-prompt-section {

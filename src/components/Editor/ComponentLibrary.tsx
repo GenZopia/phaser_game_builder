@@ -16,6 +16,8 @@ const COMPONENT_CATEGORIES = [
   { id: 'collectibles', name: 'Collectibles', icon: '💎' },
   { id: 'enemies', name: 'Enemies', icon: '👾' },
   { id: 'ui', name: 'UI', icon: '📱' },
+  { id: 'world', name: 'World', icon: '🌍' },
+  { id: 'gravity', name: 'Gravity', icon: '🟣' },
   { id: 'backgrounds', name: 'Backgrounds', icon: '🌄' },
 ];
 
@@ -41,6 +43,14 @@ const COMPONENT_ITEMS: ComponentItem[] = [
   
   // UI components
   { id: 'ui-controller', name: 'On-Screen Controller', type: 'controller', category: 'ui', icon: '🕹️', description: 'Touch controller for mobile devices' },
+  
+  // World components
+  { id: 'world-boundary-wall', name: 'Wall Boundary', type: 'boundary', category: 'world', icon: '🧱', description: 'Invisible wall that blocks movement' },
+  { id: 'world-boundary-horizontal', name: 'Horizontal Boundary', type: 'boundary', category: 'world', icon: '➖', description: 'Horizontal barrier' },
+  { id: 'world-boundary-vertical', name: 'Vertical Boundary', type: 'boundary', category: 'world', icon: '|', description: 'Vertical barrier' },
+  
+  // Gravity components
+  { id: 'gravity-zone', name: 'Gravity', type: 'gravity', category: 'gravity', icon: '🟣', description: 'Circular gravity zone that pulls objects downward' },
   
   // Background components
   { id: 'bg-sky', name: 'Sky Background', type: 'background', category: 'backgrounds', icon: '☁️', description: 'Blue sky with clouds' },

@@ -23,7 +23,7 @@ export interface GameScene {
 
 export interface GameObject {
   id: string;
-  type: 'sprite' | 'platform' | 'collectible' | 'enemy' | 'player' | 'controller';
+  type: 'sprite' | 'platform' | 'collectible' | 'enemy' | 'player' | 'controller' | 'boundary' | 'gravity';
   position: { x: number; y: number };
   scale: { x: number; y: number };
   rotation: number;
@@ -66,7 +66,7 @@ export interface CameraConfig {
 
 export interface GameBehavior {
   id: string;
-  type: 'physics' | 'controls' | 'camera' | 'oblique' | string;
+  type: 'physics' | 'controls' | 'camera' | 'oblique' | 'fixed' | 'gravity' | string;
   name: string;
   parameters: Record<string, any>;
 }
@@ -91,6 +91,7 @@ export interface ControlsBehavior extends GameBehavior {
     moveSpeed: number;
     jumpPower: number;
     canDoubleJump: boolean;
+    allowVerticalMovement: boolean;
     keys: {
       up: string;
       down: string;
@@ -122,6 +123,24 @@ export interface ObliqueBehavior extends GameBehavior {
     collisionGroup: string;
     padding: number;
     onlyCollideWithOblique: boolean;
+  };
+}
+
+export interface FixedBehavior extends GameBehavior {
+  type: 'fixed';
+  parameters: {
+    enabled: boolean;
+    screenX: number;
+    screenY: number;
+  };
+}
+
+export interface GravityBehavior extends GameBehavior {
+  type: 'gravity';
+  parameters: {
+    enabled: boolean;
+    strength: number;
+    maxDistance: number;
   };
 }
 

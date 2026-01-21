@@ -4,7 +4,7 @@ import './BehaviorLibrary.css';
 interface BehaviorItem {
   id: string;
   name: string;
-  type: 'physics' | 'controls' | 'camera' | 'oblique';
+  type: 'physics' | 'controls' | 'camera' | 'oblique' | 'fixed' | 'gravity';
   icon: string;
   description: string;
   defaultParameters: Record<string, any>;
@@ -19,12 +19,11 @@ const behaviors: BehaviorItem[] = [
     description: 'Add physics simulation with gravity, mass, and collisions',
     defaultParameters: {
       enabled: true,
-      isStatic: false,
       mass: 1,
       density: 1,
       friction: 0.3,
       bounce: 0.2,
-      gravityScale: 1,
+      gravityScale: 0,
     },
   },
   {
@@ -38,6 +37,7 @@ const behaviors: BehaviorItem[] = [
       moveSpeed: 200,
       jumpPower: 400,
       canDoubleJump: false,
+      allowVerticalMovement: true,
       keys: {
         up: 'W',
         down: 'S',
@@ -69,12 +69,37 @@ const behaviors: BehaviorItem[] = [
     name: 'Oblique Collision',
     type: 'oblique',
     icon: '🔷',
-    description: 'Control collision rules - only collide with other oblique objects',
+    description: 'Control collision rules and static body behavior',
     defaultParameters: {
       enabled: true,
+      isStatic: false,
       collisionGroup: 'default',
       padding: 0,
       onlyCollideWithOblique: true,
+    },
+  },
+  {
+    id: 'fixed',
+    name: 'Fixed Position',
+    type: 'fixed',
+    icon: '📌',
+    description: 'Pin object to screen - stays in place regardless of camera movement',
+    defaultParameters: {
+      enabled: true,
+      screenX: 100,
+      screenY: 100,
+    },
+  },
+  {
+    id: 'gravity',
+    name: 'Gravity Force',
+    type: 'gravity',
+    icon: '🧲',
+    description: 'Set gravity strength - positive attracts, negative repels objects',
+    defaultParameters: {
+      enabled: true,
+      strength: 500,
+      maxDistance: 800,
     },
   },
 ];

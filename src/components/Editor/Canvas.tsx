@@ -65,6 +65,14 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
           speed: 100,
           aiType: 'basic',
         };
+      case 'boundary':
+        return {
+          hasPhysics: true,
+          isStatic: true,
+          bounce: 0,
+          friction: 1,
+          invisible: false,
+        };
       default:
         return {};
     }
@@ -296,6 +304,22 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
     setIsPanning(false);
   };
 
+  const handleWheel = (event: React.WheelEvent) => {
+    if (state.isPlaying) return;
+    
+    event.preventDefault();
+    
+    // Zoom in/out based on wheel direction
+    const delta = event.deltaY > 0 ? 0.9 : 1.1; // Zoom out or in
+    const newZoom = Math.max(0.1, Math.min(5, state.zoom * delta));
+    
+    dispatch({
+      type: EDITOR_ACTIONS.SET_ZOOM,
+      payload: newZoom,
+      timestamp: new Date()
+    });
+  };
+
   const drawCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -314,9 +338,19 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
     ctx.fillStyle = '#34495e';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw infinite grid with pan offset
+    // Save context state
+    ctx.save();
+
+    // Apply zoom transformation from center of canvas
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    ctx.translate(centerX, centerY);
+    ctx.scale(state.zoom, state.zoom);
+    ctx.translate(-centerX, -centerY);
+
+    // Draw infinite grid with pan offset and zoom
     ctx.strokeStyle = '#2c3e50';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1 / state.zoom; // Adjust line width for zoom
     
     const gridSize = 20;
     const offsetX = state.panOffset.x % gridSize;
@@ -379,6 +413,12 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
           case 'controller':
             ctx.fillStyle = '#9b59b6';
             break;
+          case 'boundary':
+            ctx.fillStyle = '#7f8c8d';
+            break;
+          case 'gravity':
+            ctx.fillStyle = '#9b59b6';
+            break;
           default:
             ctx.fillStyle = '#95a5a6';
         }
@@ -386,8 +426,50 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
         const width = 60 * obj.scale.x;
         const height = 40 * obj.scale.y;
         
-        // Special rendering for controller
-        if (obj.type === 'controller') {
+        // Special rendering for boundary (semi-transparent with pattern)
+        if (obj.type === 'boundary') {
+          ctx.fillStyle = 'rgba(127, 140, 141, 0.3)';
+          ctx.fillRect(screenX - width/2, screenY - height/2, width, height);
+          
+          // Draw diagonal stripes pattern
+          ctx.strokeStyle = '#95a5a6';
+          ctx.lineWidth = 2;
+          for (let i = -width; i < width + height; i += 10) {
+            ctx.beginPath();
+            ctx.moveTo(screenX - width/2 + i, screenY - height/2);
+            ctx.lineTo(screenX - width/2 + i + height, screenY + height/2);
+            ctx.stroke();
+          }
+        } else if (obj.type === 'gravity') {
+          // Get gravity strength for visualization
+          const gravityStrength = obj.properties?.gravityStrength || 500;
+          const isRepulsion = gravityStrength < 0;
+          const intensity = Math.abs(gravityStrength);
+          
+          // Draw gravity zone as a simple circle with intensity-based color
+          const alpha = Math.min(0.3 + (intensity / 2000) * 0.3, 0.6);
+          ctx.fillStyle = isRepulsion 
+            ? `rgba(231, 76, 60, ${alpha})` // Red for repulsion
+            : `rgba(155, 89, 182, ${alpha})`; // Purple for attraction
+          
+          ctx.beginPath();
+          const radius = Math.min(width, height) / 2;
+          ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw border with intensity-based thickness
+          const borderWidth = Math.min(3 + (intensity / 500), 8);
+          ctx.strokeStyle = isRepulsion ? '#e74c3c' : '#9b59b6';
+          ctx.lineWidth = borderWidth;
+          ctx.stroke();
+          
+          // Draw intensity value in the center
+          ctx.font = 'bold 20px Arial';
+          ctx.fillStyle = '#ecf0f1';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(intensity.toString(), screenX, screenY);
+        } else if (obj.type === 'controller') {
           // Draw controller circle
           ctx.beginPath();
           ctx.arc(screenX, screenY, width/2, 0, Math.PI * 2);
@@ -444,6 +526,9 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
       ctx.font = '16px Arial';
       ctx.fillText('Drag components from the library to start building', canvas.width / 2, canvas.height / 2 + 10);
     }
+
+    // Restore context state
+    ctx.restore();
   };
 
   useEffect(() => {
@@ -461,7 +546,7 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [currentProject, selectedObjectId, state.selectedObjects, state.currentProject, state.panOffset, state.isPlaying]);
+  }, [currentProject, selectedObjectId, state.selectedObjects, state.currentProject, state.panOffset, state.isPlaying, state.zoom]);
 
   // Force redraw when returning from play mode
   useEffect(() => {
@@ -474,6 +559,52 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
     }
   }, [state.isPlaying]);
 
+  // Handle keyboard delete
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle delete when not playing and an object is selected
+      if (state.isPlaying || !selectedObjectId) return;
+      
+      // Only respond to Delete key (not Backspace)
+      if (event.key === 'Delete') {
+        event.preventDefault();
+        
+        // Find the object to get its type for the confirmation message
+        const scene = currentProject?.scenes[0];
+        const objectToDelete = scene?.objects.find(obj => obj.id === selectedObjectId);
+        
+        if (!objectToDelete) return;
+        
+        // Show confirmation dialog
+        const confirmDelete = window.confirm(
+          `Are you sure you want to delete this ${objectToDelete.type} object?\n\nThis action cannot be undone.`
+        );
+        
+        if (confirmDelete) {
+          console.log('Deleting object:', selectedObjectId);
+          
+          // Delete the selected object
+          dispatch({
+            type: EDITOR_ACTIONS.DELETE_OBJECTS,
+            payload: [selectedObjectId],
+            timestamp: new Date()
+          });
+          
+          // Clear selection
+          setSelectedObjectId(null);
+          dispatch({
+            type: EDITOR_ACTIONS.SELECT_OBJECTS,
+            payload: [],
+            timestamp: new Date()
+          });
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state.isPlaying, selectedObjectId, dispatch, currentProject]);
+
   // Handle stop game
   const handleStopGame = () => {
     dispatch({
@@ -485,7 +616,15 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
 
   // Show Phaser runtime when playing
   if (state.isPlaying && currentProject) {
-    return <PhaserRuntime project={currentProject} onStop={handleStopGame} />;
+    return <PhaserRuntime 
+      project={currentProject} 
+      onStop={handleStopGame}
+      initialCameraPosition={{
+        x: -state.panOffset.x,
+        y: -state.panOffset.y
+      }}
+      zoom={state.zoom}
+    />;
   }
 
   return (
@@ -507,6 +646,7 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
         style={{
           width: '100%',
           height: '100%',
@@ -530,11 +670,23 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
         color: '#95a5a6',
         fontSize: '11px',
         pointerEvents: 'none',
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
       }}>
-        {state.editorMode === 'move' 
-          ? '✋ Move Mode: Click and drag objects'
-          : '🖐️ Pan Mode: Click and drag to navigate'}
+        <span>
+          {state.editorMode === 'move' 
+            ? '✋ Move Mode: Click and drag objects'
+            : '🖐️ Pan Mode: Click and drag to navigate'}
+        </span>
+        <span style={{ 
+          borderLeft: '1px solid #4a5f7a', 
+          paddingLeft: '12px',
+          color: '#bdc3c7'
+        }}>
+          🔍 {Math.round(state.zoom * 100)}%
+        </span>
       </div>
     </div>
   );
