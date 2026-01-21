@@ -22,6 +22,8 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
   const [isDraggingObject, setIsDraggingObject] = useState(false);
   const [draggedObjectId, setDraggedObjectId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
   // Use state.currentProject instead of prop to ensure updates
   const currentProject = state.currentProject || project;
@@ -84,13 +86,18 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
       const componentData = JSON.parse(event.dataTransfer.getData('application/json')) as ComponentItem;
       const rect = canvas.getBoundingClientRect();
       
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      const screenX = event.clientX - rect.left;
+      const screenY = event.clientY - rect.top;
+      
+      // Controller objects use screen coordinates (fixed), others use world coordinates
+      const isFixed = componentData.type === 'controller';
+      const posX = isFixed ? screenX : screenX - state.panOffset.x;
+      const posY = isFixed ? screenY : screenY - state.panOffset.y;
 
       const newObject: GameObject = {
         id: `${componentData.type}_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         type: componentData.type as any,
-        position: { x, y },
+        position: { x: posX, y: posY },
         scale: { x: 1, y: 1 },
         rotation: 0,
         properties: getDefaultProperties(componentData.type),
@@ -121,7 +128,7 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
   };
 
   const handleCanvasClick = (event: React.MouseEvent) => {
-    if (state.isPlaying || isDraggingObject) return;
+    if (state.isPlaying || isDraggingObject || isPanning) return;
     
     const canvas = canvasRef.current;
     if (!canvas || !currentProject) return;
@@ -142,10 +149,15 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
       const objWidth = 60 * obj.scale.x;
       const objHeight = 40 * obj.scale.y;
       
-      if (x >= obj.position.x - objWidth/2 && 
-          x <= obj.position.x + objWidth/2 &&
-          y >= obj.position.y - objHeight/2 && 
-          y <= obj.position.y + objHeight/2) {
+      // Controller objects are fixed, others move with camera
+      const isFixed = obj.type === 'controller';
+      const screenX = isFixed ? obj.position.x : obj.position.x + state.panOffset.x;
+      const screenY = isFixed ? obj.position.y : obj.position.y + state.panOffset.y;
+      
+      if (x >= screenX - objWidth/2 && 
+          x <= screenX + objWidth/2 &&
+          y >= screenY - objHeight/2 && 
+          y <= screenY + objHeight/2) {
         clickedObject = obj;
         break;
       }
@@ -178,7 +190,14 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    // Find clicked object
+    // Pan mode - start panning
+    if (state.editorMode === 'pan') {
+      setIsPanning(true);
+      setPanStart({ x: event.clientX, y: event.clientY });
+      return;
+    }
+
+    // Move mode - find clicked object
     const scene = currentProject.scenes[0];
     if (!scene) return;
 
@@ -187,15 +206,20 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
       const objWidth = 60 * obj.scale.x;
       const objHeight = 40 * obj.scale.y;
       
-      if (x >= obj.position.x - objWidth/2 && 
-          x <= obj.position.x + objWidth/2 &&
-          y >= obj.position.y - objHeight/2 && 
-          y <= obj.position.y + objHeight/2) {
+      // Controller objects are fixed, others move with camera
+      const isFixed = obj.type === 'controller';
+      const screenX = isFixed ? obj.position.x : obj.position.x + state.panOffset.x;
+      const screenY = isFixed ? obj.position.y : obj.position.y + state.panOffset.y;
+      
+      if (x >= screenX - objWidth/2 && 
+          x <= screenX + objWidth/2 &&
+          y >= screenY - objHeight/2 && 
+          y <= screenY + objHeight/2) {
         setIsDraggingObject(true);
         setDraggedObjectId(obj.id);
         setDragOffset({
-          x: x - obj.position.x,
-          y: y - obj.position.y
+          x: x - screenX,
+          y: y - screenY
         });
         
         // Select the object
@@ -211,7 +235,7 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
   };
 
   const handleMouseMove = (event: React.MouseEvent) => {
-    if (!isDraggingObject || !draggedObjectId || state.isPlaying) return;
+    if (state.isPlaying) return;
     
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -220,25 +244,55 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    // Update object position
-    dispatch({
-      type: EDITOR_ACTIONS.UPDATE_OBJECT,
-      payload: {
-        objectId: draggedObjectId,
-        updates: {
-          position: {
-            x: x - dragOffset.x,
-            y: y - dragOffset.y
+    // Handle panning
+    if (isPanning && state.editorMode === 'pan') {
+      const deltaX = event.clientX - panStart.x;
+      const deltaY = event.clientY - panStart.y;
+      
+      dispatch({
+        type: EDITOR_ACTIONS.SET_PAN_OFFSET,
+        payload: {
+          x: state.panOffset.x + deltaX,
+          y: state.panOffset.y + deltaY
+        },
+        timestamp: new Date()
+      });
+      
+      setPanStart({ x: event.clientX, y: event.clientY });
+      return;
+    }
+
+    // Handle object dragging
+    if (isDraggingObject && draggedObjectId && state.editorMode === 'move') {
+      // Find the object being dragged to check if it's fixed
+      const scene = currentProject?.scenes[0];
+      const draggedObj = scene?.objects.find(obj => obj.id === draggedObjectId);
+      const isFixed = draggedObj?.type === 'controller';
+      
+      // Fixed objects (controllers) use screen coordinates, others use world coordinates
+      dispatch({
+        type: EDITOR_ACTIONS.UPDATE_OBJECT,
+        payload: {
+          objectId: draggedObjectId,
+          updates: {
+            position: isFixed ? {
+              x: x - dragOffset.x,
+              y: y - dragOffset.y
+            } : {
+              x: x - dragOffset.x - state.panOffset.x,
+              y: y - dragOffset.y - state.panOffset.y
+            }
           }
-        }
-      },
-      timestamp: new Date()
-    });
+        },
+        timestamp: new Date()
+      });
+    }
   };
 
   const handleMouseUp = () => {
     setIsDraggingObject(false);
     setDraggedObjectId(null);
+    setIsPanning(false);
   };
 
   const drawCanvas = () => {
@@ -248,30 +302,51 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
-    canvas.width = 800;
-    canvas.height = 600;
+    // Make canvas fill its container
+    const container = canvas.parentElement;
+    if (container) {
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    }
 
     // Clear canvas
     ctx.fillStyle = '#34495e';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
+    // Draw infinite grid with pan offset
     ctx.strokeStyle = '#2c3e50';
     ctx.lineWidth = 1;
     
     const gridSize = 20;
-    for (let x = 0; x <= canvas.width; x += gridSize) {
+    const offsetX = state.panOffset.x % gridSize;
+    const offsetY = state.panOffset.y % gridSize;
+    
+    for (let x = offsetX; x <= canvas.width; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, canvas.height);
       ctx.stroke();
     }
     
-    for (let y = 0; y <= canvas.height; y += gridSize) {
+    for (let y = offsetY; y <= canvas.height; y += gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+
+    // Draw origin indicator (0,0 in world space)
+    const originX = state.panOffset.x;
+    const originY = state.panOffset.y;
+    
+    if (originX >= 0 && originX <= canvas.width && originY >= 0 && originY <= canvas.height) {
+      ctx.strokeStyle = '#e74c3c';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(originX - 10, originY);
+      ctx.lineTo(originX + 10, originY);
+      ctx.moveTo(originX, originY - 10);
+      ctx.lineTo(originX, originY + 10);
       ctx.stroke();
     }
 
@@ -280,6 +355,11 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
       const scene = currentProject.scenes[0];
       scene.objects.forEach(obj => {
         const isSelected = selectedObjectId === obj.id || state.selectedObjects.some(selected => selected.id === obj.id);
+        
+        // Controller objects are fixed to screen, others move with camera
+        const isFixed = obj.type === 'controller';
+        const screenX = isFixed ? obj.position.x : obj.position.x + state.panOffset.x;
+        const screenY = isFixed ? obj.position.y : obj.position.y + state.panOffset.y;
         
         // Draw object based on type
         switch (obj.type) {
@@ -295,6 +375,9 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
           case 'enemy':
             ctx.fillStyle = '#e74c3c';
             break;
+          case 'controller':
+            ctx.fillStyle = '#9b59b6';
+            break;
           default:
             ctx.fillStyle = '#95a5a6';
         }
@@ -302,30 +385,53 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
         const width = 60 * obj.scale.x;
         const height = 40 * obj.scale.y;
         
-        ctx.fillRect(
-          obj.position.x - width/2, 
-          obj.position.y - height/2, 
-          width, 
-          height
-        );
+        // Special rendering for controller
+        if (obj.type === 'controller') {
+          // Draw controller circle
+          ctx.beginPath();
+          ctx.arc(screenX, screenY, width/2, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw joystick icon
+          ctx.fillStyle = '#ecf0f1';
+          ctx.font = '24px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('🕹️', screenX, screenY);
+        } else {
+          // Regular rectangle rendering
+          ctx.fillRect(
+            screenX - width/2, 
+            screenY - height/2, 
+            width, 
+            height
+          );
+        }
         
         // Draw selection outline
         if (isSelected) {
           ctx.strokeStyle = '#ffffff';
           ctx.lineWidth = 3;
-          ctx.strokeRect(
-            obj.position.x - width/2 - 2, 
-            obj.position.y - height/2 - 2, 
-            width + 4, 
-            height + 4
-          );
+          if (obj.type === 'controller') {
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, width/2 + 2, 0, Math.PI * 2);
+            ctx.stroke();
+          } else {
+            ctx.strokeRect(
+              screenX - width/2 - 2, 
+              screenY - height/2 - 2, 
+              width + 4, 
+              height + 4
+            );
+          }
         }
         
         // Draw object label
         ctx.fillStyle = '#ecf0f1';
         ctx.font = '12px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(obj.type, obj.position.x, obj.position.y + height/2 + 15);
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(obj.type, screenX, screenY + height/2 + 15);
       });
     } else {
       // Draw placeholder text
@@ -341,91 +447,106 @@ const Canvas: React.FC<CanvasProps> = ({ project }) => {
 
   useEffect(() => {
     drawCanvas();
-  }, [currentProject, selectedObjectId, state.selectedObjects, state.currentProject]);
-
-  const togglePlay = () => {
-    dispatch({
-      type: EDITOR_ACTIONS.SET_PLAYING,
-      payload: !state.isPlaying,
-      timestamp: new Date()
-    });
-  };
+    
+    // Redraw on window resize
+    const handleResize = () => {
+      drawCanvas();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [currentProject, selectedObjectId, state.selectedObjects, state.currentProject, state.panOffset]);
 
   return (
     <div style={{
-      display: 'flex',
-      flexDirection: 'column',
+      width: '100%',
       height: '100%',
-      background: '#2c3e50'
+      background: '#34495e',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      <div style={{
-        padding: '12px 16px',
-        background: '#34495e',
-        borderBottom: '1px solid #4a5f7a',
-        color: '#ecf0f1',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <h3 style={{ margin: 0 }}>Game Canvas</h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            onClick={togglePlay}
-            style={{
-              padding: '8px 16px',
-              background: state.isPlaying ? 'linear-gradient(135deg, #e74c3c, #c0392b)' : 'linear-gradient(135deg, #27ae60, #2ecc71)',
-              border: 'none',
-              borderRadius: '6px',
-              color: 'white',
-              fontSize: '13px',
-              cursor: 'pointer'
-            }}
-          >
-            {state.isPlaying ? '⏹ Stop' : '▶ Play'}
-          </button>
-          <span style={{ color: '#bdc3c7', fontSize: '12px' }}>
-            {state.isPlaying ? '▶️ Playing' : '⏸️ Editor Mode'}
-          </span>
+      <canvas
+        ref={canvasRef}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          cursor: state.isPlaying 
+            ? 'default' 
+            : state.editorMode === 'pan' 
+              ? (isPanning ? 'grabbing' : 'grab')
+              : (isDraggingObject ? 'grabbing' : 'move'),
+          background: '#34495e'
+        }}
+      />
+      
+      {/* Play mode overlay */}
+      {state.isPlaying && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(0, 0, 0, 0.85)',
+          padding: '32px 48px',
+          borderRadius: '12px',
+          color: '#ecf0f1',
+          textAlign: 'center',
+          maxWidth: '500px',
+          border: '2px solid #3498db',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎮</div>
+          <h2 style={{ margin: '0 0 16px 0', color: '#3498db' }}>Play Mode</h2>
+          <p style={{ margin: '0 0 12px 0', fontSize: '14px', lineHeight: '1.6' }}>
+            The behaviors you added are stored but not yet implemented.
+          </p>
+          <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#95a5a6', lineHeight: '1.5' }}>
+            To make the game actually playable, you need to integrate a physics engine like Phaser.js 
+            that will read the behavior data and execute it.
+          </p>
+          <div style={{ 
+            background: 'rgba(52, 152, 219, 0.1)', 
+            padding: '12px', 
+            borderRadius: '6px',
+            fontSize: '12px',
+            color: '#bdc3c7',
+            marginTop: '16px'
+          }}>
+            <strong>What's working:</strong><br/>
+            ✅ Behavior configuration<br/>
+            ✅ Data storage<br/>
+            ❌ Game runtime (not implemented yet)
+          </div>
         </div>
-      </div>
+      )}
       
+      {/* Status overlay */}
       <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#34495e',
-        padding: '20px'
-      }}>
-        <canvas
-          ref={canvasRef}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          style={{
-            border: '2px solid #4a5f7a',
-            borderRadius: '4px',
-            cursor: state.isPlaying ? 'default' : isDraggingObject ? 'grabbing' : 'grab',
-            background: '#34495e'
-          }}
-        />
-      </div>
-      
-      <div style={{
-        padding: '8px 16px',
-        background: '#2c3e50',
-        borderTop: '1px solid #34495e',
+        position: 'absolute',
+        bottom: '8px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        padding: '6px 12px',
+        background: 'rgba(44, 62, 80, 0.9)',
+        borderRadius: '4px',
         color: '#95a5a6',
-        fontSize: '12px',
-        textAlign: 'center'
+        fontSize: '11px',
+        pointerEvents: 'none',
+        whiteSpace: 'nowrap'
       }}>
         {!state.isPlaying ? (
-          '📝 Editor Mode: Drag components from the library or click objects to select them'
+          state.editorMode === 'move' 
+            ? '✋ Move Mode: Click and drag objects'
+            : '🖐️ Pan Mode: Click and drag to navigate'
         ) : (
-          '🎮 Playing: Use WASD or Arrow Keys to move (Phaser integration coming soon)'
+          '🎮 Playing - Click Stop to return to editor'
         )}
       </div>
     </div>

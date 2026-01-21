@@ -23,7 +23,7 @@ export interface GameScene {
 
 export interface GameObject {
   id: string;
-  type: 'sprite' | 'platform' | 'collectible' | 'enemy' | 'player';
+  type: 'sprite' | 'platform' | 'collectible' | 'enemy' | 'player' | 'controller';
   position: { x: number; y: number };
   scale: { x: number; y: number };
   rotation: number;
@@ -66,8 +66,53 @@ export interface CameraConfig {
 
 export interface GameBehavior {
   id: string;
-  type: string;
+  type: 'physics' | 'controls' | 'camera' | string;
+  name: string;
   parameters: Record<string, any>;
+}
+
+export interface PhysicsBehavior extends GameBehavior {
+  type: 'physics';
+  parameters: {
+    enabled: boolean;
+    isStatic: boolean;
+    mass: number;
+    density: number;
+    friction: number;
+    bounce: number;
+    gravityScale: number;
+  };
+}
+
+export interface ControlsBehavior extends GameBehavior {
+  type: 'controls';
+  parameters: {
+    enabled: boolean;
+    moveSpeed: number;
+    jumpPower: number;
+    canDoubleJump: boolean;
+    keys: {
+      up: string;
+      down: string;
+      left: string;
+      right: string;
+      jump: string;
+    };
+  };
+}
+
+export interface CameraBehavior extends GameBehavior {
+  type: 'camera';
+  parameters: {
+    enabled: boolean;
+    smoothing: number;
+    offsetX: number;
+    offsetY: number;
+    deadzone: {
+      width: number;
+      height: number;
+    };
+  };
 }
 
 export interface AssetReference {
@@ -128,6 +173,7 @@ export interface EditorState {
   isPlaying: boolean;
   zoom: number;
   panOffset: { x: number; y: number };
+  editorMode: 'move' | 'pan';
 }
 
 export interface EditorAction {

@@ -1,77 +1,72 @@
 .game-editor {
-  display: grid;
-  grid-template-areas: 
-    "header header header"
-    "sidebar canvas properties"
-    "ai-prompt ai-prompt ai-prompt";
-  grid-template-rows: auto 1fr auto;
-  grid-template-columns: 300px 1fr 300px;
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   background: #1a1a1a;
-  gap: 1px;
+  overflow: hidden;
 }
 
 .editor-header {
-  grid-area: header;
+  flex-shrink: 0;
   background: #2c3e50;
   border-bottom: 1px solid #34495e;
 }
 
 .editor-content {
-  display: contents;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .component-library-sidebar {
-  grid-area: sidebar;
+  width: 300px;
+  flex-shrink: 0;
   background: #2c3e50;
   border-right: 1px solid #34495e;
   overflow-y: auto;
 }
 
 .canvas-area {
-  grid-area: canvas;
+  flex: 1;
   background: #34495e;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
 }
 
 .properties-sidebar {
-  grid-area: properties;
+  width: 300px;
+  flex-shrink: 0;
   background: #2c3e50;
   border-left: 1px solid #34495e;
   overflow-y: auto;
 }
 
 .ai-prompt-section {
-  grid-area: ai-prompt;
+  flex-shrink: 0;
   background: #2c3e50;
   border-top: 1px solid #34495e;
-  min-height: 50px;
   overflow: visible;
 }
 
 /* Responsive design */
 @media (max-width: 1200px) {
-  .game-editor {
-    grid-template-columns: 250px 1fr 250px;
+  .component-library-sidebar,
+  .properties-sidebar {
+    width: 250px;
   }
 }
 
 @media (max-width: 768px) {
-  .game-editor {
-    grid-template-areas: 
-      "header"
-      "canvas"
-      "sidebar"
-      "properties"
-      "ai-prompt";
-    grid-template-rows: auto 1fr auto auto auto;
-    grid-template-columns: 1fr;
+  .editor-content {
+    flex-direction: column;
   }
   
   .component-library-sidebar,
   .properties-sidebar {
+    width: 100%;
     max-height: 200px;
   }
 }

@@ -18,10 +18,10 @@
 
 .panel-resizer {
   position: absolute;
-  top: -5px;
+  top: -8px;
   left: 0;
   right: 0;
-  height: 10px;
+  height: 16px;
   cursor: ns-resize;
   z-index: 10;
   display: flex;
@@ -35,23 +35,23 @@
 
 .resizer-handle {
   background: #34495e;
-  border-radius: 3px;
-  padding: 2px 8px;
-  opacity: 0;
+  border-radius: 4px;
+  padding: 3px 12px;
+  opacity: 0.7;
   transition: opacity 0.2s ease;
   border: 1px solid #4a5f7a;
 }
 
 .resizer-dots {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   align-items: center;
 }
 
 .resizer-dots span {
-  width: 3px;
-  height: 3px;
-  background: #ecf0f1;
+  width: 4px;
+  height: 4px;
+  background: #95a5a6;
   border-radius: 50%;
   display: block;
 }

@@ -31,24 +31,28 @@ const ResizableAIPanel: React.FC<ResizableAIPanelProps> = ({
     setIsResizing(true);
     startY.current = e.clientY;
     startHeight.current = height;
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
   }, [height]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isResizing) return;
-    
     const deltaY = startY.current - e.clientY;
     const newHeight = Math.min(maxHeight, Math.max(minHeight, startHeight.current + deltaY));
     setHeight(newHeight);
-  }, [isResizing, minHeight, maxHeight]);
+  }, [minHeight, maxHeight]);
 
   const handleMouseUp = useCallback(() => {
     setIsResizing(false);
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-  }, [handleMouseMove]);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -110,7 +114,7 @@ const ResizableAIPanel: React.FC<ResizableAIPanelProps> = ({
       document.removeEventListener('mousemove', handleFloatingMouseMove);
       document.removeEventListener('mouseup', handleFloatingMouseUp);
     };
-  }, [handleMouseMove, handleMouseUp, handleFloatingMouseMove, handleFloatingMouseUp]);
+  }, []);
 
   if (isFloating) {
     return (

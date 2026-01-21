@@ -11,6 +11,7 @@ const initialState: EditorState = {
   isPlaying: false,
   zoom: 1,
   panOffset: { x: 0, y: 0 },
+  editorMode: 'move', // 'move' for moving objects, 'pan' for panning canvas
 };
 
 // Action types
@@ -25,6 +26,7 @@ export const EDITOR_ACTIONS = {
   SET_PLAYING: 'SET_PLAYING',
   SET_ZOOM: 'SET_ZOOM',
   SET_PAN_OFFSET: 'SET_PAN_OFFSET',
+  SET_EDITOR_MODE: 'SET_EDITOR_MODE',
   UNDO: 'UNDO',
   REDO: 'REDO',
 } as const;
@@ -162,6 +164,12 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return {
         ...state,
         panOffset: action.payload,
+      };
+
+    case EDITOR_ACTIONS.SET_EDITOR_MODE:
+      return {
+        ...state,
+        editorMode: action.payload,
       };
 
     case EDITOR_ACTIONS.UNDO:

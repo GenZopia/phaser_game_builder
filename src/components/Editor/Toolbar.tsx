@@ -101,6 +101,22 @@ const Toolbar: React.FC = () => {
     gameEditor.resetView();
   };
 
+  const handleSetMoveMode = () => {
+    dispatch({
+      type: EDITOR_ACTIONS.SET_EDITOR_MODE,
+      payload: 'move',
+      timestamp: new Date()
+    });
+  };
+
+  const handleSetPanMode = () => {
+    dispatch({
+      type: EDITOR_ACTIONS.SET_EDITOR_MODE,
+      payload: 'pan',
+      timestamp: new Date()
+    });
+  };
+
   return (
     <div className="toolbar">
       <div className="toolbar-section">
@@ -172,6 +188,27 @@ const Toolbar: React.FC = () => {
         >
           <span className="icon">{state.isPlaying ? '⏹️' : '▶️'}</span>
           {state.isPlaying ? 'Stop' : 'Play'}
+        </button>
+      </div>
+
+      <div className="toolbar-separator"></div>
+
+      <div className="toolbar-section">
+        <button 
+          className={`toolbar-button ${state.editorMode === 'move' ? 'active' : ''}`}
+          onClick={handleSetMoveMode}
+          title="Move Object Mode - Click and drag objects"
+        >
+          <span className="icon">✋</span>
+          Move
+        </button>
+        <button 
+          className={`toolbar-button ${state.editorMode === 'pan' ? 'active' : ''}`}
+          onClick={handleSetPanMode}
+          title="Pan Canvas Mode - Navigate around the canvas"
+        >
+          <span className="icon">🖐️</span>
+          Pan
         </button>
       </div>
 

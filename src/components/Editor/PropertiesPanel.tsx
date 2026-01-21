@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import type { GameObject } from '../../types';
+import type { GameObject, GameBehavior } from '../../types';
 import { useEditor, EDITOR_ACTIONS } from '../../context/EditorContext';
+import BehaviorLibrary from './BehaviorLibrary';
 import './PropertiesPanel.css';
 
 interface PropertiesPanelProps {
@@ -8,19 +9,27 @@ interface PropertiesPanelProps {
 }
 
 const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) => {
-  const { dispatch } = useEditor();
+  const { dispatch, state } = useEditor();
 
   const selectedObject = selectedObjects.length === 1 ? selectedObjects[0] : null;
   const multipleSelected = selectedObjects.length > 1;
 
-  // Local state for input values to prevent lag
+  // Get the fresh object from state to ensure we have latest data
+  const freshSelectedObject = selectedObject && state.currentProject 
+    ? state.currentProject.scenes[0]?.objects.find(obj => obj.id === selectedObject.id)
+    : null;
+  
+  const objectToUse = freshSelectedObject || selectedObject;
+
+  // Local state for input values
   const [posX, setPosX] = useState(selectedObject?.position.x || 0);
   const [posY, setPosY] = useState(selectedObject?.position.y || 0);
   const [scaleX, setScaleX] = useState(selectedObject?.scale.x || 1);
   const [scaleY, setScaleY] = useState(selectedObject?.scale.y || 1);
   const [rotation, setRotation] = useState(selectedObject?.rotation || 0);
 
-  // Update local state when selected object changes
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
   useEffect(() => {
     if (selectedObject) {
       setPosX(selectedObject.position.x);
@@ -29,7 +38,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
       setScaleY(selectedObject.scale.y);
       setRotation(selectedObject.rotation);
     }
-  }, [selectedObject?.id]);
+  }, [selectedObject?.id, objectToUse?.behaviors?.length]);
 
   const handlePropertyChange = (property: string, value: any) => {
     if (!selectedObject) return;
@@ -46,33 +55,97 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
 
   const handlePositionChange = (axis: 'x' | 'y', value: number) => {
     if (!selectedObject) return;
-
-    const newPosition = { 
-      ...selectedObject.position, 
-      [axis]: value 
-    };
+    const newPosition = { ...selectedObject.position, [axis]: value };
     handlePropertyChange('position', newPosition);
   };
 
   const handleScaleChange = (axis: 'x' | 'y', value: number) => {
     if (!selectedObject) return;
-
-    const newScale = { 
-      ...selectedObject.scale, 
-      [axis]: value 
-    };
+    const newScale = { ...selectedObject.scale, [axis]: value };
     handlePropertyChange('scale', newScale);
   };
 
-  const handleRotationChange = (value: number) => {
-    handlePropertyChange('rotation', value);
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log('🎯 Drag over drop zone');
+    setIsDraggingOver(true);
   };
 
-  const handleCustomPropertyChange = (key: string, value: any) => {
-    if (!selectedObject) return;
+  const handleDragLeave = (event: React.DragEvent) => {
+    event.preventDefault();
+    console.log('👋 Drag leave drop zone');
+    setIsDraggingOver(false);
+  };
 
-    const newProperties = { ...selectedObject.properties, [key]: value };
-    handlePropertyChange('properties', newProperties);
+  const handleBehaviorDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDraggingOver(false);
+    
+    console.log('🎉 Behavior drop event triggered!');
+    
+    if (!selectedObject) {
+      console.log('❌ No selected object');
+      return;
+    }
+
+    try {
+      const dataString = event.dataTransfer.getData('application/json');
+      console.log('📦 Dropped data:', dataString);
+      
+      if (!dataString) {
+        console.log('❌ No data in drop event');
+        return;
+      }
+      
+      const data = JSON.parse(dataString);
+      console.log('✅ Parsed data:', data);
+      
+      if (!data.isBehavior) {
+        console.log('❌ Not a behavior, ignoring');
+        return;
+      }
+
+      const newBehavior: GameBehavior = {
+        id: `${data.type}_${Date.now()}`,
+        type: data.type,
+        name: data.name,
+        parameters: data.defaultParameters,
+      };
+
+      console.log('✨ Creating new behavior:', newBehavior);
+      console.log('📋 Current behaviors:', objectToUse?.behaviors || []);
+
+      const updatedBehaviors = [...(objectToUse?.behaviors || []), newBehavior];
+      console.log('🔄 Updated behaviors:', updatedBehaviors);
+      console.log('🔄 Updated behaviors:', updatedBehaviors);
+      
+      handlePropertyChange('behaviors', updatedBehaviors);
+      console.log('✅ Behavior added successfully!');
+    } catch (error) {
+      console.error('💥 Failed to add behavior:', error);
+    }
+  };
+
+  const handleBehaviorRemove = (behaviorId: string) => {
+    if (!selectedObject) return;
+    const updatedBehaviors = (objectToUse?.behaviors || []).filter(b => b.id !== behaviorId);
+    handlePropertyChange('behaviors', updatedBehaviors);
+  };
+
+  const handleBehaviorParameterChange = (behaviorId: string, paramKey: string, value: any) => {
+    if (!selectedObject) return;
+    const updatedBehaviors = (objectToUse?.behaviors || []).map(b => {
+      if (b.id === behaviorId) {
+        return {
+          ...b,
+          parameters: { ...b.parameters, [paramKey]: value },
+        };
+      }
+      return b;
+    });
+    handlePropertyChange('behaviors', updatedBehaviors);
   };
 
   if (selectedObjects.length === 0) {
@@ -81,9 +154,14 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
         <div className="panel-header">
           <h3>Properties</h3>
         </div>
-        <div className="no-selection">
-          <p>No objects selected</p>
-          <p className="no-selection-hint">Select an object to edit its properties</p>
+        <div className="properties-content">
+          <div className="no-selection">
+            <p>No objects selected</p>
+            <p className="no-selection-hint">Select an object to edit its properties</p>
+          </div>
+          <div className="property-section">
+            <BehaviorLibrary />
+          </div>
         </div>
       </div>
     );
@@ -95,9 +173,13 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
         <div className="panel-header">
           <h3>Properties</h3>
         </div>
-        <div className="multiple-selection">
-          <p>{selectedObjects.length} objects selected</p>
-          <p className="multiple-selection-hint">Multi-object editing coming soon</p>
+        <div className="properties-content">
+          <div className="multiple-selection">
+            <p>{selectedObjects.length} objects selected</p>
+          </div>
+          <div className="property-section">
+            <BehaviorLibrary />
+          </div>
         </div>
       </div>
     );
@@ -125,7 +207,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
                 <label>X</label>
                 <input
                   type="number"
-                  value={posX}
+                  value={Math.round(posX)}
                   onChange={(e) => {
                     const val = parseFloat(e.target.value) || 0;
                     setPosX(val);
@@ -138,7 +220,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
                 <label>Y</label>
                 <input
                   type="number"
-                  value={posY}
+                  value={Math.round(posY)}
                   onChange={(e) => {
                     const val = parseFloat(e.target.value) || 0;
                     setPosY(val);
@@ -192,7 +274,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
               onChange={(e) => {
                 const val = parseFloat(e.target.value) || 0;
                 setRotation(val);
-                handleRotationChange(val);
+                handlePropertyChange('rotation', val);
               }}
               step="1"
               min="-360"
@@ -202,122 +284,296 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ selectedObjects }) =>
           </div>
         </div>
 
-        {/* Physics Properties */}
-        {(selectedObject!.type === 'player' || selectedObject!.type === 'enemy' || selectedObject!.type === 'platform') && (
-          <div className="property-section">
-            <h4>Physics</h4>
-            
-            <div className="property-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={selectedObject!.properties.hasPhysics || false}
-                  onChange={(e) => handleCustomPropertyChange('hasPhysics', e.target.checked)}
-                />
-                Enable Physics
-              </label>
-            </div>
+        {/* Behaviors Section */}
+        <div className="property-section">
+          <h4>Behaviors</h4>
+          
+          {/* Test button */}
+          <button 
+            onClick={() => {
+              if (!selectedObject) return;
+              const testBehavior: GameBehavior = {
+                id: `physics_test_${Date.now()}`,
+                type: 'physics',
+                name: 'Physics',
+                parameters: {
+                  enabled: true,
+                  isStatic: false,
+                  mass: 1,
+                  density: 1,
+                  friction: 0.3,
+                  bounce: 0.2,
+                  gravityScale: 1,
+                },
+              };
+              const updatedBehaviors = [...(objectToUse?.behaviors || []), testBehavior];
+              handlePropertyChange('behaviors', updatedBehaviors);
+            }}
+            style={{
+              padding: '8px 12px',
+              background: '#3498db',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginBottom: '8px',
+              width: '100%'
+            }}
+          >
+            🧪 Test Add Physics (Click to test)
+          </button>
+          
+          <div 
+            className={`behavior-drop-zone ${isDraggingOver ? 'dragging-over' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleBehaviorDrop}
+          >
+            {(objectToUse!.behaviors || []).length === 0 ? (
+              <div className="drop-zone-empty">
+                <p>Drop behaviors here</p>
+              </div>
+            ) : (
+              <div className="behaviors-list">
+                {(objectToUse!.behaviors || []).map((behavior) => (
+                  <div key={behavior.id} className="behavior-card">
+                    <div className="behavior-card-header">
+                      <span className="behavior-card-name">{behavior.name}</span>
+                      <button
+                        className="behavior-remove-btn"
+                        onClick={() => handleBehaviorRemove(behavior.id)}
+                        title="Remove behavior"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    
+                    {/* Physics Behavior Parameters */}
+                    {behavior.type === 'physics' && (
+                      <div className="behavior-parameters">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={behavior.parameters.enabled}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'enabled', e.target.checked)}
+                          />
+                          Enabled
+                        </label>
+                        
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={behavior.parameters.isStatic}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'isStatic', e.target.checked)}
+                          />
+                          Static Body
+                        </label>
 
-            {selectedObject!.properties.hasPhysics && (
-              <>
-                <div className="property-group">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={selectedObject!.properties.isStatic || false}
-                      onChange={(e) => handleCustomPropertyChange('isStatic', e.target.checked)}
-                    />
-                    Static Body
-                  </label>
-                </div>
+                        <div className="param-row">
+                          <label>Mass</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.mass}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'mass', parseFloat(e.target.value) || 1)}
+                            step="0.1"
+                            min="0.1"
+                          />
+                        </div>
 
-                <div className="property-group">
-                  <label>Bounce</label>
-                  <input
-                    type="number"
-                    value={selectedObject!.properties.bounce || 0}
-                    onChange={(e) => handleCustomPropertyChange('bounce', parseFloat(e.target.value) || 0)}
-                    step="0.1"
-                    min="0"
-                    max="1"
-                  />
-                </div>
+                        <div className="param-row">
+                          <label>Density</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.density}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'density', parseFloat(e.target.value) || 1)}
+                            step="0.1"
+                            min="0.1"
+                          />
+                        </div>
 
-                <div className="property-group">
-                  <label>Friction</label>
-                  <input
-                    type="number"
-                    value={selectedObject!.properties.friction || 1}
-                    onChange={(e) => handleCustomPropertyChange('friction', parseFloat(e.target.value) || 1)}
-                    step="0.1"
-                    min="0"
-                    max="1"
-                  />
-                </div>
-              </>
+                        <div className="param-row">
+                          <label>Friction</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.friction}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'friction', parseFloat(e.target.value) || 0)}
+                            step="0.1"
+                            min="0"
+                            max="1"
+                          />
+                        </div>
+
+                        <div className="param-row">
+                          <label>Bounce</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.bounce}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'bounce', parseFloat(e.target.value) || 0)}
+                            step="0.1"
+                            min="0"
+                            max="1"
+                          />
+                        </div>
+
+                        <div className="param-row">
+                          <label>Gravity Scale</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.gravityScale}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'gravityScale', parseFloat(e.target.value) || 1)}
+                            step="0.1"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Controls Behavior Parameters */}
+                    {behavior.type === 'controls' && (
+                      <div className="behavior-parameters">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={behavior.parameters.enabled}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'enabled', e.target.checked)}
+                          />
+                          Enabled
+                        </label>
+
+                        <div className="param-row">
+                          <label>Move Speed</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.moveSpeed}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'moveSpeed', parseFloat(e.target.value) || 100)}
+                            step="10"
+                            min="0"
+                          />
+                        </div>
+
+                        <div className="param-row">
+                          <label>Jump Power</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.jumpPower}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'jumpPower', parseFloat(e.target.value) || 100)}
+                            step="10"
+                            min="0"
+                          />
+                        </div>
+
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={behavior.parameters.canDoubleJump}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'canDoubleJump', e.target.checked)}
+                          />
+                          Double Jump
+                        </label>
+
+                        <div className="keys-section">
+                          <h5>Key Bindings</h5>
+                          {Object.entries(behavior.parameters.keys).map(([action, key]) => (
+                            <div key={action} className="param-row">
+                              <label>{action.charAt(0).toUpperCase() + action.slice(1)}</label>
+                              <input
+                                type="text"
+                                value={key as string}
+                                onChange={(e) => {
+                                  const newKeys = { ...behavior.parameters.keys, [action]: e.target.value };
+                                  handleBehaviorParameterChange(behavior.id, 'keys', newKeys);
+                                }}
+                                maxLength={10}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Camera Behavior Parameters */}
+                    {behavior.type === 'camera' && (
+                      <div className="behavior-parameters">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={behavior.parameters.enabled}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'enabled', e.target.checked)}
+                          />
+                          Enabled
+                        </label>
+
+                        <div className="param-row">
+                          <label>Smoothing</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.smoothing}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'smoothing', parseFloat(e.target.value) || 0.1)}
+                            step="0.05"
+                            min="0"
+                            max="1"
+                          />
+                        </div>
+
+                        <div className="param-row">
+                          <label>Offset X</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.offsetX}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'offsetX', parseFloat(e.target.value) || 0)}
+                            step="10"
+                          />
+                        </div>
+
+                        <div className="param-row">
+                          <label>Offset Y</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.offsetY}
+                            onChange={(e) => handleBehaviorParameterChange(behavior.id, 'offsetY', parseFloat(e.target.value) || 0)}
+                            step="10"
+                          />
+                        </div>
+
+                        <div className="param-row">
+                          <label>Deadzone Width</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.deadzone?.width || 100}
+                            onChange={(e) => {
+                              const newDeadzone = { ...behavior.parameters.deadzone, width: parseFloat(e.target.value) || 100 };
+                              handleBehaviorParameterChange(behavior.id, 'deadzone', newDeadzone);
+                            }}
+                            step="10"
+                            min="0"
+                          />
+                        </div>
+
+                        <div className="param-row">
+                          <label>Deadzone Height</label>
+                          <input
+                            type="number"
+                            value={behavior.parameters.deadzone?.height || 100}
+                            onChange={(e) => {
+                              const newDeadzone = { ...behavior.parameters.deadzone, height: parseFloat(e.target.value) || 100 };
+                              handleBehaviorParameterChange(behavior.id, 'deadzone', newDeadzone);
+                            }}
+                            step="10"
+                            min="0"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-        )}
-
-        {/* Behavior Properties */}
-        {selectedObject!.type === 'enemy' && (
-          <div className="property-section">
-            <h4>Behavior</h4>
-            
-            <div className="property-group">
-              <label>AI Type</label>
-              <select
-                value={selectedObject!.properties.aiType || 'basic'}
-                onChange={(e) => handleCustomPropertyChange('aiType', e.target.value)}
-              >
-                <option value="basic">Basic</option>
-                <option value="patrol">Patrol</option>
-                <option value="chase">Chase Player</option>
-                <option value="flying">Flying</option>
-              </select>
-            </div>
-
-            <div className="property-group">
-              <label>Speed</label>
-              <input
-                type="number"
-                value={selectedObject!.properties.speed || 100}
-                onChange={(e) => handleCustomPropertyChange('speed', parseFloat(e.target.value) || 100)}
-                step="10"
-                min="0"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Collectible Properties */}
-        {selectedObject!.type === 'collectible' && (
-          <div className="property-section">
-            <h4>Collectible</h4>
-            
-            <div className="property-group">
-              <label>Points Value</label>
-              <input
-                type="number"
-                value={selectedObject!.properties.points || 10}
-                onChange={(e) => handleCustomPropertyChange('points', parseFloat(e.target.value) || 10)}
-                step="10"
-                min="0"
-              />
-            </div>
-
-            <div className="property-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={selectedObject!.properties.respawns || false}
-                  onChange={(e) => handleCustomPropertyChange('respawns', e.target.checked)}
-                />
-                Respawns
-              </label>
-            </div>
-          </div>
-        )}
+        </div>
+        
+        {/* Behavior Library */}
+        <div className="property-section">
+          <BehaviorLibrary />
+        </div>
       </div>
     </div>
   );

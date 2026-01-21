@@ -15,6 +15,7 @@ const COMPONENT_CATEGORIES = [
   { id: 'platforms', name: 'Platforms', icon: '🧱' },
   { id: 'collectibles', name: 'Collectibles', icon: '💎' },
   { id: 'enemies', name: 'Enemies', icon: '👾' },
+  { id: 'ui', name: 'UI', icon: '📱' },
   { id: 'backgrounds', name: 'Backgrounds', icon: '🌄' },
 ];
 
@@ -37,6 +38,9 @@ const COMPONENT_ITEMS: ComponentItem[] = [
   { id: 'enemy-basic', name: 'Basic Enemy', type: 'enemy', category: 'enemies', icon: '👾', description: 'Simple enemy with basic AI' },
   { id: 'enemy-patrol', name: 'Patrol Enemy', type: 'enemy', category: 'enemies', icon: '🤖', description: 'Enemy that patrols back and forth' },
   { id: 'enemy-flying', name: 'Flying Enemy', type: 'enemy', category: 'enemies', icon: '🦇', description: 'Flying enemy with aerial movement' },
+  
+  // UI components
+  { id: 'ui-controller', name: 'On-Screen Controller', type: 'controller', category: 'ui', icon: '🕹️', description: 'Touch controller for mobile devices' },
   
   // Background components
   { id: 'bg-sky', name: 'Sky Background', type: 'background', category: 'backgrounds', icon: '☁️', description: 'Blue sky with clouds' },

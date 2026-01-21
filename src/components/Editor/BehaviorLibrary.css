@@ -1,0 +1,81 @@
+.behavior-library {
+  padding: 16px;
+  background: #2c3e50;
+}
+
+.behavior-header {
+  margin-bottom: 12px;
+}
+
+.behavior-header h4 {
+  margin: 0 0 4px 0;
+  color: #ecf0f1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.behavior-hint {
+  margin: 0;
+  color: #95a5a6;
+  font-size: 11px;
+}
+
+.behavior-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.behavior-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  background: #34495e;
+  border: 2px solid #4a5f7a;
+  border-radius: 6px;
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.behavior-item:hover {
+  background: #3d5a73;
+  border-color: #5a7a9a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.behavior-item:active {
+  cursor: grabbing;
+  transform: translateY(0);
+}
+
+.behavior-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 4px;
+}
+
+.behavior-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.behavior-name {
+  color: #ecf0f1;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.behavior-description {
+  color: #95a5a6;
+  font-size: 11px;
+  line-height: 1.3;
+}
