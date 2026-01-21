@@ -1,0 +1,145 @@
+.simple-canvas {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #2c3e50;
+}
+
+.canvas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #34495e;
+  border-bottom: 1px solid #4a5f7a;
+  flex-shrink: 0;
+}
+
+.canvas-header h3 {
+  margin: 0;
+  color: #ecf0f1;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.canvas-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.play-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.play-button:hover {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.play-button.playing {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.play-button.playing:hover {
+  background: linear-gradient(135deg, #c0392b, #e74c3c);
+}
+
+.status-info {
+  color: #bdc3c7;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.canvas-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #34495e;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.game-canvas {
+  border: 2px solid #4a5f7a;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  cursor: crosshair;
+  background: #34495e;
+}
+
+.game-canvas:hover {
+  border-color: #5a6f8a;
+}
+
+.canvas-info {
+  padding: 8px 16px;
+  background: #2c3e50;
+  border-top: 1px solid #34495e;
+  flex-shrink: 0;
+}
+
+.canvas-info p {
+  margin: 0;
+  color: #95a5a6;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Drag and drop feedback */
+.canvas-container.drag-over {
+  background: #3498db;
+  opacity: 0.8;
+}
+
+.canvas-container.drag-over::after {
+  content: "Drop component here";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .canvas-header {
+    padding: 8px 12px;
+  }
+  
+  .canvas-header h3 {
+    font-size: 14px;
+  }
+  
+  .play-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .canvas-container {
+    padding: 10px;
+  }
+  
+  .game-canvas {
+    max-width: 100%;
+    max-height: 100%;
+  }
+}

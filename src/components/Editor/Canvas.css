@@ -1,0 +1,82 @@
+.canvas-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #34495e;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.canvas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #2c3e50;
+  border-bottom: 1px solid #34495e;
+}
+
+.canvas-header h3 {
+  margin: 0;
+  color: #ecf0f1;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.canvas-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.zoom-info,
+.status-info {
+  color: #bdc3c7;
+  font-size: 14px;
+}
+
+.phaser-canvas {
+  flex: 1;
+  position: relative;
+  background: #34495e;
+  border: 2px dashed #4a5f7a;
+  margin: 10px;
+  border-radius: 4px;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ecf0f1;
+  text-align: center;
+}
+
+.canvas-info {
+  padding: 12px 16px;
+  background: #2c3e50;
+  border-top: 1px solid #34495e;
+}
+
+.canvas-info p {
+  margin: 4px 0;
+  color: #95a5a6;
+  font-size: 12px;
+}
+
+/* Drag and drop styles */
+.phaser-canvas.drag-over {
+  border-color: #3498db;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+/* Game canvas specific styles */
+.phaser-canvas canvas {
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

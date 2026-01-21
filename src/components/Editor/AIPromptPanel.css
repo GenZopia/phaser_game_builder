@@ -1,0 +1,364 @@
+.ai-prompt-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #2d2d2d;
+  position: relative;
+}
+
+.prompt-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #404040;
+}
+
+.prompt-header h3 {
+  margin: 0 0 4px 0;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prompt-header p {
+  margin: 0;
+  color: #cccccc;
+  font-size: 12px;
+}
+
+.prompt-content {
+  flex: 1;
+  padding: 12px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.prompt-form {
+  flex-shrink: 0;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.error-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.error-dismiss {
+  background: none;
+  border: none;
+  color: #721c24;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  margin-left: auto;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.error-dismiss:hover {
+  opacity: 1;
+}
+
+.prompt-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.random-button {
+  padding: 8px 12px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.random-button:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+.random-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prompt-input {
+  flex: 1;
+  padding: 12px;
+  background-color: #3c3c3c;
+  border: 1px solid #555555;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  max-height: 100px;
+}
+
+.prompt-input::placeholder {
+  color: #999999;
+}
+
+.prompt-input:focus {
+  outline: none;
+  border-color: #0e639c;
+  box-shadow: 0 0 0 2px rgba(14, 99, 156, 0.2);
+}
+
+.prompt-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.generate-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #0e639c, #1177bb);
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-height: 44px;
+}
+
+.generate-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1177bb, #1488cc);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 99, 156, 0.3);
+}
+
+.generate-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.generate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.generate-button.generating {
+  background: linear-gradient(135deg, #666666, #777777);
+}
+
+.generate-button .icon {
+  font-size: 16px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.prompt-suggestions {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.suggestions-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggestions-section h4 {
+  margin: 0 0 8px 0;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.suggestion-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.suggestion-button {
+  padding: 10px 12px;
+  background-color: #404040;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  color: #cccccc;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.3;
+}
+
+.suggestion-button:hover:not(:disabled) {
+  background-color: #4a4a4a;
+  border-color: #666666;
+  color: #ffffff;
+}
+
+.suggestion-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.history-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background-color: transparent;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  color: #999999;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.history-button:hover:not(:disabled) {
+  background-color: #333333;
+  border-color: #555555;
+  color: #cccccc;
+}
+
+.history-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.history-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.history-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.generation-status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(45, 45, 45, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.status-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background-color: #3c3c3c;
+  border: 1px solid #555555;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.status-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #555555;
+  border-top: 3px solid #0e639c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.status-text p {
+  margin: 0;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-detail {
+  color: #cccccc !important;
+  font-size: 12px !important;
+  font-weight: normal !important;
+  margin-top: 4px !important;
+}
+
+/* Scrollbar styling */
+.prompt-content::-webkit-scrollbar,
+.suggestion-buttons::-webkit-scrollbar,
+.history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.prompt-content::-webkit-scrollbar-track,
+.suggestion-buttons::-webkit-scrollbar-track,
+.history-list::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+.prompt-content::-webkit-scrollbar-thumb,
+.suggestion-buttons::-webkit-scrollbar-thumb,
+.history-list::-webkit-scrollbar-thumb {
+  background: #555555;
+  border-radius: 3px;
+}
+
+.prompt-content::-webkit-scrollbar-thumb:hover,
+.suggestion-buttons::-webkit-scrollbar-thumb:hover,
+.history-list::-webkit-scrollbar-thumb:hover {
+  background: #666666;
+}

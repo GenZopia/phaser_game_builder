@@ -1,0 +1,254 @@
+.resizable-ai-panel {
+  position: relative;
+  background: #2c3e50;
+  border-top: 1px solid #34495e;
+  display: flex;
+  flex-direction: column;
+  transition: height 0.2s ease;
+}
+
+.resizable-ai-panel.collapsed {
+  height: auto !important;
+}
+
+.resizable-ai-panel.resizing {
+  user-select: none;
+  transition: none;
+}
+
+.panel-resizer {
+  position: absolute;
+  top: -5px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  cursor: ns-resize;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-resizer:hover .resizer-handle {
+  opacity: 1;
+}
+
+.resizer-handle {
+  background: #34495e;
+  border-radius: 3px;
+  padding: 2px 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border: 1px solid #4a5f7a;
+}
+
+.resizer-dots {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.resizer-dots span {
+  width: 3px;
+  height: 3px;
+  background: #ecf0f1;
+  border-radius: 50%;
+  display: block;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #2c3e50;
+  border-bottom: 1px solid #34495e;
+  flex-shrink: 0;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ecf0f1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.panel-icon {
+  font-size: 16px;
+}
+
+.panel-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.panel-control-btn {
+  background: transparent;
+  border: 1px solid #34495e;
+  color: #bdc3c7;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+}
+
+.panel-control-btn:hover {
+  background: #34495e;
+  border-color: #4a5f7a;
+  color: #ecf0f1;
+}
+
+.panel-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Floating window styles */
+.ai-panel-floating {
+  position: fixed;
+  background: #2c3e50;
+  border: 1px solid #34495e;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  resize: both;
+  min-width: 400px;
+  min-height: 300px;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.floating-header {
+  background: #34495e;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: move;
+  user-select: none;
+  border-bottom: 1px solid #4a5f7a;
+}
+
+.floating-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ecf0f1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.floating-icon {
+  font-size: 16px;
+}
+
+.floating-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.floating-control-btn {
+  background: transparent;
+  border: 1px solid #4a5f7a;
+  color: #bdc3c7;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+}
+
+.floating-control-btn:hover {
+  background: #4a5f7a;
+  color: #ecf0f1;
+}
+
+.floating-control-btn.close:hover {
+  background: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.floating-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Override AI panel styles when in floating mode */
+.floating-content .ai-prompt-panel {
+  background: transparent;
+  height: 100%;
+}
+
+.floating-content .prompt-header {
+  display: none; /* Hide duplicate header */
+}
+
+.floating-content .prompt-content {
+  padding: 16px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ai-panel-floating {
+    min-width: 300px;
+    min-height: 250px;
+  }
+  
+  .floating-title {
+    font-size: 12px;
+  }
+  
+  .floating-icon {
+    font-size: 14px;
+  }
+}
+
+/* Animation for collapse/expand */
+.resizable-ai-panel:not(.collapsed) {
+  animation: expandPanel 0.2s ease-out;
+}
+
+@keyframes expandPanel {
+  from {
+    height: auto;
+  }
+  to {
+    height: var(--panel-height, 250px);
+  }
+}
+
+/* Cursor changes during resize */
+.resizable-ai-panel.resizing,
+.resizable-ai-panel.resizing * {
+  cursor: ns-resize !important;
+}
+
+/* Highlight during resize */
+.resizable-ai-panel.resizing .panel-resizer .resizer-handle {
+  opacity: 1;
+  background: #3498db;
+  border-color: #2980b9;
+}
+
+.resizable-ai-panel.resizing .panel-resizer .resizer-dots span {
+  background: #ecf0f1;
+}

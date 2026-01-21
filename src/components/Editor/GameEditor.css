@@ -1,0 +1,99 @@
+.game-editor {
+  display: grid;
+  grid-template-areas: 
+    "header header header"
+    "sidebar canvas properties"
+    "ai-prompt ai-prompt ai-prompt";
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 300px 1fr 300px;
+  height: 100vh;
+  background: #1a1a1a;
+  gap: 1px;
+}
+
+.editor-header {
+  grid-area: header;
+  background: #2c3e50;
+  border-bottom: 1px solid #34495e;
+}
+
+.editor-content {
+  display: contents;
+}
+
+.component-library-sidebar {
+  grid-area: sidebar;
+  background: #2c3e50;
+  border-right: 1px solid #34495e;
+  overflow-y: auto;
+}
+
+.canvas-area {
+  grid-area: canvas;
+  background: #34495e;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.properties-sidebar {
+  grid-area: properties;
+  background: #2c3e50;
+  border-left: 1px solid #34495e;
+  overflow-y: auto;
+}
+
+.ai-prompt-section {
+  grid-area: ai-prompt;
+  background: #2c3e50;
+  border-top: 1px solid #34495e;
+  min-height: 50px;
+  overflow: visible;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .game-editor {
+    grid-template-columns: 250px 1fr 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-editor {
+    grid-template-areas: 
+      "header"
+      "canvas"
+      "sidebar"
+      "properties"
+      "ai-prompt";
+    grid-template-rows: auto 1fr auto auto auto;
+    grid-template-columns: 1fr;
+  }
+  
+  .component-library-sidebar,
+  .properties-sidebar {
+    max-height: 200px;
+  }
+}
+
+/* Scrollbar styling for sidebars */
+.component-library-sidebar::-webkit-scrollbar,
+.properties-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.component-library-sidebar::-webkit-scrollbar-track,
+.properties-sidebar::-webkit-scrollbar-track {
+  background: #34495e;
+}
+
+.component-library-sidebar::-webkit-scrollbar-thumb,
+.properties-sidebar::-webkit-scrollbar-thumb {
+  background: #4a5f7a;
+  border-radius: 3px;
+}
+
+.component-library-sidebar::-webkit-scrollbar-thumb:hover,
+.properties-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #5a6f8a;
+}
